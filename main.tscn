@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://dhhfte1cc6w3x"]
+
+[ext_resource type="Shader" path="res://canvas.gdshader" id="1_mjyw1"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_acdl6"]
+shader = ExtResource("1_mjyw1")
+shader_parameter/origin = Vector3(0, 0, 0)
+
+[node name="Node3D" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="Control"]
+material = SubResource("ShaderMaterial_acdl6")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
