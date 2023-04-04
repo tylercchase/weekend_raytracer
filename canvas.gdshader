@@ -19,8 +19,22 @@ struct hit_record {
 	float t;
 	bool front_face;
 };
-
-void set_face_normal(hit_record hit, ray r, vec3 outward_normal) {
+float random (vec2 uv) {
+    return fract(sin(dot(uv.xy,
+        vec2(12.9898,78.233))) * 43758.5453123);
+}
+vec3 random_vector() {
+	return vec3(random(vec2(TIME*0.000000001,0.0)), random(vec2(TIME*0.000000001,0.0)), random(vec2(TIME*0.000000001,0.0)));
+}
+vec3 random_in_unit_sphere() {
+	while(true) {
+		vec3 p = random_vector();
+		p = vec3((p.x - 1.0) *2.0 ,(p.y - 1.0) *2.0, (p.z - 1.0) *2.0);
+		if(length(p) * length(p) >= 1.0) continue;
+		return p;
+	}
+}
+void set_face_normal(inout hit_record hit, ray r, vec3 outward_normal) {
 	hit.front_face = dot(r.direction, outward_normal) < 0.0;
 	hit.normal = hit.front_face ? outward_normal : -outward_normal;
 }
@@ -39,9 +53,21 @@ bool hit_sphere(vec3 center, float radius, ray r, inout hit_record rec, float t_
 	if (discriminant < 0.0) {
 		return false;
 	} 
-//	float sqrtd = sqrt(discriminant);
+	float sqrtd = sqrt(discriminant);
 	
-	return true; //(-b - sqrt(discriminant)) / (2.0 * a);
+	float root = (-half_b - sqrtd) / a;
+	if (root < t_min || t_max < root) {
+		root = (-half_b + sqrtd) / a;
+		if (root < t_min || t_max < root){
+			return false;
+		}
+	}
+	rec.t = root;
+	rec.p = at(r,rec.t);
+	vec3 outward_normal = (0.0 - (rec.p - center)) / radius;
+	set_face_normal(rec, r, outward_normal);
+	
+	return true;
 }
 
 bool check_hits(ray r, float t_min, float t_max, inout hit_record rec, sphere world[2]) {
@@ -52,32 +78,43 @@ bool check_hits(ray r, float t_min, float t_max, inout hit_record rec, sphere wo
 		sphere temp = world[i];
 		if(hit_sphere(temp.center,temp.radius,r, temp_rec, t_min, t_max)) {
 			hit_anything = true;
-			
+			closest_so_far = temp_rec.t;
+			rec = temp_rec;
 		}
 	}
-	return false;
+	return hit_anything;
 }
 
-vec3 ray_color(ray r, sphere world[2]) {
-	hit_record temp;
-	bool hit = hit_sphere(vec3(0.0,0.0,-1.0), 0.5, r, temp,0.0,1.0);
-	if(hit) {
-		return vec3(0.0,1.0,0);
+vec3 ray_color2(ray r, sphere world[2]) {
+	hit_record rec;
+	if(check_hits(r,0.1,300000.0,rec,world)) {
+		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+		return vec3(1.0);
 	}
-//	if (t > 0.0) {
-//		vec3 N = vec3(at(r,t) - vec3(0,0,-1));
-//		return 0.5*vec3(N.x + 1.0, N.y + 1.0, N.z + 1.0);
-//	}
+	
+	vec3 direction = r.direction;
+	float t = 0.5*(direction.y + 1.0);
+	return (1.0 - t) * vec3(1.0) + t*vec3(0.5,0.7,1.0);
+}
+vec3 ray_color(ray r, sphere world[2]) {
+	hit_record rec;
+	if(check_hits(r,0.01,300000.0,rec,world)) {
+		vec3 color = vec3(0.0);
+		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+		for(int i = 0; i < 1; i++) {
+			ray ray_temp = ray(rec.p, target-rec.p);
+			color +=  0.5 * ray_color2(ray_temp, world);
+			target = rec.p + rec.normal + random_in_unit_sphere();
+		}
+		color = color;
+		return color; //(rec.normal + vec3(1.0,1.0,1.0));
+	}
 	
 	vec3 direction = r.direction;
 	float t = 0.5*(direction.y + 1.0);
 	return (1.0 - t) * vec3(1.0) + t*vec3(0.5,0.7,1.0);
 }
 
-float random (vec2 uv) {
-    return fract(sin(dot(uv.xy,
-        vec2(12.9898,78.233))) * 43758.5453123);
-}
 
 void fragment() {
 	
@@ -93,11 +130,11 @@ void fragment() {
     vec3 lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - vec3(0, 0, focal_length);
 	
 	sphere world[] = {
-		sphere(vec3(0,0,-1.0),0.5),
-		sphere(vec3(0,0,0),100.0)
+		sphere(vec3(0,100.5,-1.0),100.0),
+		sphere(vec3(0,0,-1.0),0.5)
 	};
 	
-	int samples_per_pixel = 100;
+	int samples_per_pixel = 1;
 	vec3 r_color = vec3(0);
 	for(int s = 0; s < samples_per_pixel; s++) {
 		float rand = random(UV);
