@@ -24,12 +24,12 @@ float random (vec2 uv) {
         vec2(12.9898,78.233))) * 43758.5453123);
 }
 vec3 random_vector() {
-	return vec3(random(vec2(TIME*0.000000001,0.0)), random(vec2(TIME*0.000000001,0.0)), random(vec2(TIME*0.000000001,0.0)));
+	return vec3(random(vec2(fract(TIME*0.0000000001),0.0)), random(vec2(fract(TIME*0.0000000001),0.0)), random(vec2(fract(TIME*0.0000000001),0.0)));
 }
 vec3 random_in_unit_sphere() {
 	while(true) {
 		vec3 p = random_vector();
-		p = vec3((p.x - 1.0) *2.0 ,(p.y - 1.0) *2.0, (p.z - 1.0) *2.0);
+		p = vec3((p.x - 1.0) * 2.0 ,(p.y - 1.0) * 2.0, (p.z - 1.0) * 2.0);
 		if(length(p) * length(p) >= 1.0) continue;
 		return p;
 	}
@@ -85,26 +85,21 @@ bool check_hits(ray r, float t_min, float t_max, inout hit_record rec, sphere wo
 	return hit_anything;
 }
 
-vec3 ray_color2(ray r, sphere world[2]) {
-	hit_record rec;
-	if(check_hits(r,0.1,300000.0,rec,world)) {
-		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		return vec3(1.0);
-	}
-	
-	vec3 direction = r.direction;
-	float t = 0.5*(direction.y + 1.0);
-	return (1.0 - t) * vec3(1.0) + t*vec3(0.5,0.7,1.0);
-}
 vec3 ray_color(ray r, sphere world[2]) {
 	hit_record rec;
-	if(check_hits(r,0.01,300000.0,rec,world)) {
+	if(check_hits(r,0.0,300000.0,rec,world)) {
 		vec3 color = vec3(0.0);
 		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		for(int i = 0; i < 1; i++) {
-			ray ray_temp = ray(rec.p, target-rec.p);
-			color +=  0.5 * ray_color2(ray_temp, world);
-			target = rec.p + rec.normal + random_in_unit_sphere();
+		ray ray_temp = ray(rec.p , target-rec.p);
+		for(int i = 0; i < 50; i++) {
+			if(check_hits(ray_temp,0.01,30000000.0,rec,world)) {
+				target = rec.p + rec.normal + random_in_unit_sphere();
+				ray_temp = ray(rec.p , target-rec.p);
+			} else {
+				float t = 0.5*(ray_temp.direction.y + 1.0);
+				color += 0.5 * (1.0 - t) * vec3(1.0) + t*vec3(0.0,0.0,0.0);
+				break;
+			}
 		}
 		color = color;
 		return color; //(rec.normal + vec3(1.0,1.0,1.0));
@@ -145,7 +140,7 @@ void fragment() {
 		r_color += ray_color(r, world);
 	}
 	vec3 color = r_color * vec3(1.0/float(samples_per_pixel));
-	color = vec3(clamp(color.r,0.0,1.0), clamp(color.g,0.0,1.0), clamp(color.b,0.0,1.0));
+	color = vec3(sqrt(clamp(color.r,0.0,1.0)), sqrt(clamp(color.g,0.0,1.0)), sqrt(clamp(color.b,0.0,1.0)));
 	
 	COLOR = vec4(color.r,color.g,color.b, 1.0);
 }

@@ -45,7 +45,7 @@ func _process(delta):
 		translate(direction * _velocity * delta * boost_speed_multiplier)
 	else:
 		translate(direction * _velocity * delta)
-	raytrace_panel.material.set_shader_parameter('origin', global_position)
+	raytrace_panel.material.set_shader_parameter('origin', Vector3(global_position.x, -global_position.y, global_position.z))
 
 	if Input.is_action_just_pressed("toggle_raytrace"):
 		raytrace_panel.visible = !raytrace_panel.visible
