@@ -16,11 +16,11 @@ func _input(event):
 	if not current:
 		return
 		
-	if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		if event is InputEventMouseMotion:
-			rotation.y -= event.relative.x / 1000 * sensitivity
-			rotation.x -= event.relative.y / 1000 * sensitivity
-			rotation.x = clamp(rotation.x, PI/-2, PI/2)
+	# if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+		# if event is InputEventMouseMotion:
+		# 	rotation.y -= event.relative.x / 1000 * sensitivity
+		# 	rotation.x -= event.relative.y / 1000 * sensitivity
+		# 	rotation.x = clamp(rotation.x, PI/-2, PI/2)
 	
 	if event is InputEventMouseButton:
 		match event.button_index:
@@ -46,3 +46,6 @@ func _process(delta):
 	else:
 		translate(direction * _velocity * delta)
 	raytrace_panel.material.set_shader_parameter('origin', global_position)
+
+	if Input.is_action_just_pressed("toggle_raytrace"):
+		raytrace_panel.visible = !raytrace_panel.visible
